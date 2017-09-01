@@ -180,14 +180,6 @@
 								.catch((error) => console.error(error))
 						}
 					},
-					toggleDone (store, todo) {
-						if (todo && todo.id)
-						{
-							return Vue.http.patch('/todos/todos/'+todo.id+'/', todo)
-								.then((response) => store.commit('EDIT_TODO', response))
-								.catch((error) => console.error(error))
-						}
-					},
 					removeTodo (store, todo) {
 						return Vue.http.delete('/todos/todos/'+todo.id)
 							.then((response) => store.commit('REMOVE_TODO', todo))
