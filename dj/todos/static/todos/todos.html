@@ -4,7 +4,7 @@
 	<head>
 		 <title>Todo</title>
 		 <meta charset="utf-8">
-		 <link rel="stylesheet" type="text/css" href="https://unpkg.com/todomvc-app-css@2.0.6/index.css">
+		 <link rel="stylesheet" type="text/css" href="todos.css">
 	</head>
 	<body>
 				<section class="todoapp">
@@ -13,14 +13,7 @@
 					<header class="header">
 						<h1>todos</h1>
 								<p v-on:click="addTodo">Add</p>
-								
-						<input class="new-todo-time"
-										autocomplete="off"
-							placeholder="00:00"
-							v-model="newTodoTime"
-							@keyup.enter="addTodoTime">
-							
-							
+						
 						<input class="new-todo"
 							autofocus autocomplete="off"
 							placeholder="What needs to be done?"
@@ -203,8 +196,10 @@
 					newTodo: '',
 					editedTodo: null,
 					newTodoTime: '',
-					isediting: false,
 					time: '00:00',
+					
+					isediting: false,
+					beforeEditCache: '',
 				},
 				
 				props: [
@@ -237,7 +232,6 @@
 					editTodo: function () {
 						console.log("editing todo", this.id)
 						this.beforeEditCache = this.title
-						this.editedTodo = this
 						this.isediting = true
 					},
 					doneEdit: function () {
@@ -245,6 +239,7 @@
 						{
 							console.log("done edit: ", this.id)
 							this.isediting = false
+							this.beforeEditCache = ''
 							
 							this.title = this.title.trim()
 							
@@ -255,13 +250,15 @@
 							
 							this.extractTimeFromTitle(this);
 							
-						app.$store.dispatch('editTodo', this._props)
+							app.$store.dispatch('editTodo', this._props)
 						}
 					},
 			
 					cancelEdit: function () {
-						this.editedTodo = null
+						this.isediting = false
 						this.title = this.beforeEditCache
+						this.beforeEditCache = ''
+						
 					},
 					
 					extractTimeFromTitle: function (todo) {
@@ -391,7 +388,7 @@
 						// just as an object being pushed in an array and nowhere else
 						var todo = {
 							//id: todoStorage.uid++,
-							title: this.newTodoTime + ' ' + value,
+							title: value,
 							done: false,
 							time: ''
 						}
@@ -401,7 +398,6 @@
 						this.$store.dispatch('addTodo', todo)
 	  
 						this.newTodo = '';
-						this.newTodoTime = '';
 					},
 					
 					
