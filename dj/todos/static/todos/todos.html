@@ -33,14 +33,18 @@
 					
 					<section class="main" v-show="todos.length" v-cloak>
 						<input class="toggle-all" type="checkbox" v-model="allDone">
+					
 						<ul class="todo-list">
+						
+							<!--
 							<li v-for="todo in filteredTodos"
 								class="todo"
 								:key="todo.id"
-								:class="{ completed: todo.completed, editing: todo == editedTodo }">
+								:id="todo.id"
+								:class="{ done: todo.done, editing: todo == editedTodo }">
 								
 								<div class="view">
-									<input class="toggle" type="checkbox" v-model="todo.completed">
+									<input class="toggle" type="checkbox" v-model="todo.done">
 									<label @dblclick="editTodo(todo)">{{ todo.title }}</label>
 									<button class="destroy" @click="removeTodo(todo)"></button>
 								</div>
@@ -52,6 +56,21 @@
 									@keyup.enter="doneEdit(todo)"
 									@keyup.esc="cancelEdit(todo)">
 							</li>
+							-->
+							
+							
+							<my-todo 
+								class="todo"
+								v-for="(todo, index) in filteredTodos"
+								:key="todo.id"
+								:id="todo.id"
+								:time="todo.time"
+								:done="todo.done"
+								:title="todo.title"
+								:class="{ done: todo.done, editing: todo == editedTodo }">
+								
+								
+							</my-todo>
 						</ul>
 					</section>
 					
@@ -63,10 +82,10 @@
 						<ul class="filters">
 							<li><a href="#/all" :class="{ selected: visibility == 'all' }">All</a></li>
 							<li><a href="#/active" :class="{ selected: visibility == 'active' }">Active</a></li>
-							<li><a href="#/completed" :class="{ selected: visibility == 'completed' }">Completed</a></li>
+							<li><a href="#/done" :class="{ selected: visibility == 'done' }">done</a></li>
 						</ul>
-						<button class="clear-completed" @click="removeCompleted" v-show="todos.length > remaining">
-							Clear completed
+						<button class="clear-done" @click="removedone" v-show="todos.length > remaining">
+							Clear done
 						</button>
 					</footer>
 					
@@ -79,6 +98,30 @@
 					<p>Written by <a href="http://evanyou.me">Evan You</a></p>
 					<p>Part of <a href="http://todomvc.com">TodoMVC</a></p>
 				</footer>
+		
+		
+		
+		
+		<script type="text/x-template" id="my-todo-template">
+			<li>
+				<div class="view">
+					<input class="toggle" type="checkbox" v-model="checked">
+					<label @dblclick="editTodo()">{{ title }}</label>
+					<button class="destroy" @click="removeTodo()"></button>
+				</div>
+				
+				<input class="edit" type="text"
+					v-model="title"
+					v-todo-focus="false"
+					@blur="doneEdit()"
+					@keyup.enter="doneEdit()"
+					@keyup.esc="cancelEdit()">
+			
+			
+			</li>
+		</script>
+		
+		
 		
 		
 		<script src="vue.min.js"></script>
@@ -129,7 +172,14 @@
 					editTodo (store, todo) {
 						if (todo && todo.id)
 						{
-							console.log(todo.id);
+							return Vue.http.patch('/todos/todos/'+todo.id+'/', todo)
+								.then((response) => store.commit('EDIT_TODO', response))
+								.catch((error) => console.error(error))
+						}
+					},
+					toggleDone (store, todo) {
+						if (todo && todo.id)
+						{
 							return Vue.http.patch('/todos/todos/'+todo.id+'/', todo)
 								.then((response) => store.commit('EDIT_TODO', response))
 								.catch((error) => console.error(error))
@@ -148,6 +198,87 @@
 				}
 			})
 						
+	
+			
+			// Just a var with a child component to be used locally via vue.components
+			var Todo = {
+				template: '#my-todo-template',
+				
+				data: {
+					newTodo: '',
+					editedTodo: null,
+					newTodoTime: '',
+				},
+				
+				props: [
+					"done",
+					"title",
+					"time",
+					"id",
+				],
+				
+				computed: {
+					checked: {
+						get () {
+							return this.done
+						},
+						set (value) {
+							console.log("done", this)
+							this.done = value
+							this.$store.dispatch('editTodo', this._props)
+						}
+					}
+				},
+				
+				methods:{
+					removeTodo: function () {
+						console.log("remove todo", this, this.id)
+						this.$store.dispatch('removeTodo', this)
+					},
+			
+					editTodo: function () {
+						console.log("editing todo", this.id)
+						this.beforeEditCache = this.title
+						this.editedTodo = this
+					},
+					doneEdit: function () {
+						if (!this.editedTodo) {
+							return
+						}
+						this.editedTodo = null
+						this.title = this.title.trim()
+						if (!this.title) {
+							this.removeTodo(this)
+							return
+						}
+						this.extractTimeFromTitle(this);
+						
+						app.$store.dispatch('editTodo', this)
+					},
+			
+					cancelEdit: function () {
+						this.editedTodo = null
+						this.title = this.beforeEditCache
+					},
+					
+					extractTimeFromTitle: function (todo) {
+						if (todo) {
+							if (todo && todo.title) {
+								var match = todo.title.match(/\d{1,2}:\d{2}/);
+							} 
+							todo.time = (match && match[0]) || '';
+							if (!todo.time)
+							{
+								delete todo.time;
+							}
+							console.log(todo.time)
+						}
+					},
+				
+				
+				},
+
+			}
 			
 			
 			
@@ -175,12 +306,12 @@
 				},
 				active: function (todos) {
 					return todos.filter(function (todo) {
-						return !todo.completed
+						return !todo.done
 					})
 				},
-				completed: function (todos) {
+				done: function (todos) {
 					return todos.filter(function (todo) {
-						return todo.completed
+						return todo.done
 					})
 				}
 			}
@@ -194,6 +325,10 @@
 					editedTodo: null,
 					visibility: 'all',
 					newTodoTime: '',
+				},
+				
+				components: {
+					"my-todo": Todo,
 				},
 				
 				store: store,
@@ -228,7 +363,7 @@
 						},
 						set: function (value) {
 							this.todos.forEach(function (todo) {
-								todo.completed = value
+								todo.done = value
 							})
 						}
 					}
@@ -253,7 +388,7 @@
 						var todo = {
 							//id: todoStorage.uid++,
 							title: this.newTodoTime + ' ' + value,
-							completed: false,
+							done: false,
 							time: ''
 						}
 						
@@ -264,7 +399,9 @@
 						this.newTodo = '';
 						this.newTodoTime = '';
 					},
-			
+					
+					
+/*			
 					removeTodo: function (todo) {
 						//this.todos.splice(this.todos.indexOf(todo), 1)
 						this.$store.dispatch('removeTodo', todo)
@@ -274,7 +411,6 @@
 						this.beforeEditCache = todo.title
 						this.editedTodo = todo
 					},
-			
 					doneEdit: function (todo) {
 						if (!this.editedTodo) {
 							return
@@ -294,8 +430,12 @@
 						this.editedTodo = null
 						todo.title = this.beforeEditCache
 					},
+					
+*/
+					
+					
 			
-					removeCompleted: function () {
+					removedone: function () {
 						this.todos = filters.active(this.todos)
 					},
 					
