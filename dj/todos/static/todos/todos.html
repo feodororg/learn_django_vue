@@ -249,18 +249,22 @@
 						this.isediting = true
 					},
 					doneEdit: function () {
-						this.isediting = false
-						
-						this.title = this.title.trim()
-						
-						if (!this.title) {
-							this.removeTodo(this)
-							return
-						}
-						
-						this.extractTimeFromTitle(this);
-						
+						if (this.isediting)
+						{
+							console.log("done edit: ", this.id)
+							this.isediting = false
+							
+							this.title = this.title.trim()
+							
+							if (!this.title) {
+								this.removeTodo(this)
+								return
+							}
+							
+							this.extractTimeFromTitle(this);
+							
 						app.$store.dispatch('editTodo', this._props)
+						}
 					},
 			
 					cancelEdit: function () {
