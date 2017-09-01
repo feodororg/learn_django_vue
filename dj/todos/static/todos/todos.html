@@ -67,7 +67,7 @@
 								:time="todo.time"
 								:done="todo.done"
 								:title="todo.title"
-								:class="{ done: todo.done, editing: todo == editedTodo }">
+								:class="{ done: todo.done}">
 								
 								
 							</my-todo>
@@ -103,7 +103,10 @@
 		
 		
 		<script type="text/x-template" id="my-todo-template">
-			<li>
+			<li
+				:class="{ editing: isediting }"
+			
+			>
 				<div class="view">
 					<input class="toggle" type="checkbox" v-model="checked">
 					<label @dblclick="editTodo()">{{ title }}</label>
@@ -208,6 +211,8 @@
 					newTodo: '',
 					editedTodo: null,
 					newTodoTime: '',
+					isediting: false,
+					time: '00:00',
 				},
 				
 				props: [
@@ -215,6 +220,7 @@
 					"title",
 					"time",
 					"id",
+					"isediting",
 				],
 				
 				computed: {
@@ -240,20 +246,21 @@
 						console.log("editing todo", this.id)
 						this.beforeEditCache = this.title
 						this.editedTodo = this
+						this.isediting = true
 					},
 					doneEdit: function () {
-						if (!this.editedTodo) {
-							return
-						}
-						this.editedTodo = null
+						this.isediting = false
+						
 						this.title = this.title.trim()
+						
 						if (!this.title) {
 							this.removeTodo(this)
 							return
 						}
+						
 						this.extractTimeFromTitle(this);
 						
-						app.$store.dispatch('editTodo', this)
+						app.$store.dispatch('editTodo', this._props)
 					},
 			
 					cancelEdit: function () {
@@ -269,7 +276,8 @@
 							todo.time = (match && match[0]) || '';
 							if (!todo.time)
 							{
-								delete todo.time;
+								// delete todo.time;
+								todo.time = '00:00'
 							}
 							console.log(todo.time)
 						}
