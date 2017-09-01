@@ -129,6 +129,7 @@
 			Vue.config.silent = false;
 		
 			const store = new Vuex.Store({
+  				strict: true,
 				state: {
 					todos: [
 						{ title: 'Learn Vue.' },
