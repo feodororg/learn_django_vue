@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+		 <title>Todo</title>
+		 <meta charset="utf-8">
+		 <link rel="stylesheet" type="text/css" href="https://unpkg.com/todomvc-app-css@2.0.6/index.css">
+	</head>
+	<body>
+				<section class="todoapp">
+					
+					
+					<header class="header">
+						<h1>todos</h1>
+								<p v-on:click="addTodo">Add</p>
+								
+						<input class="new-todo-time"
+										autocomplete="off"
+							placeholder="00:00"
+							v-model="newTodoTime"
+							@keyup.enter="addTodoTime">
+							
+							
+						<input class="new-todo"
+							autofocus autocomplete="off"
+							placeholder="What needs to be done?"
+							v-model="newTodo"
+							@keyup.enter="addTodo">
+							
+							
+					</header>
+					
+					
+					<section class="main" v-show="todos.length" v-cloak>
+						<input class="toggle-all" type="checkbox" v-model="allDone">
+						<ul class="todo-list">
+							<li v-for="todo in filteredTodos"
+								class="todo"
+								:key="todo.id"
+								:class="{ completed: todo.completed, editing: todo == editedTodo }">
+								
+								<div class="view">
+									<input class="toggle" type="checkbox" v-model="todo.completed">
+									<label @dblclick="editTodo(todo)">{{ todo.title }}</label>
+									<button class="destroy" @click="removeTodo(todo)"></button>
+								</div>
+								
+								<input class="edit" type="text"
+									v-model="todo.title"
+									v-todo-focus="todo == editedTodo"
+									@blur="doneEdit(todo)"
+									@keyup.enter="doneEdit(todo)"
+									@keyup.esc="cancelEdit(todo)">
+							</li>
+						</ul>
+					</section>
+					
+					
+					<footer class="footer" v-show="todos.length" v-cloak>
+						<span class="todo-count">
+							<strong>{{ remaining }}</strong> {{ remaining | pluralize }} left
+						</span>
+						<ul class="filters">
+							<li><a href="#/all" :class="{ selected: visibility == 'all' }">All</a></li>
+							<li><a href="#/active" :class="{ selected: visibility == 'active' }">Active</a></li>
+							<li><a href="#/completed" :class="{ selected: visibility == 'completed' }">Completed</a></li>
+						</ul>
+						<button class="clear-completed" @click="removeCompleted" v-show="todos.length > remaining">
+							Clear completed
+						</button>
+					</footer>
+					
+					
+				</section>
+				
+				
+				<footer class="info">
+					<p>Double-click to edit a todo</p>
+					<p>Written by <a href="http://evanyou.me">Evan You</a></p>
+					<p>Part of <a href="http://todomvc.com">TodoMVC</a></p>
+				</footer>
+		
+		
+		<script src="vue.min.js"></script>
+		<script src="vuex.js"></script>
+		<script src="vue-resource.js"></script>
+		<script type="text/javascript">
+			Vue.config.devtools = true;
+			Vue.config.debug = true;
+			Vue.config.silent = false;
+		
+			const store = new Vuex.Store({
+				state: {
+					todos: [
+						{ title: 'Learn Vue.' },
+						{ title: 'Do hard things.' }
+					]
+				},
+				mutations: {
+					'LOAD_TODOS': function (state, response) {
+						console.log(response.body.results)
+						state.todos = response.body.results
+					},
+					'ADD_TODO': function (state, response) {
+						state.todos.push(response.body)
+					},
+					'EDIT_TODO': function (state, response) {
+						console.log("EDIT_TODO mutation");
+					},
+					'REMOVE_TODO': function (state, todo) {
+						state.todos.splice(state.todos.indexOf(todo), 1)
+					},
+					'REMOVE_ALL': function (state) {
+						const todos = state.todos
+						todos.splice(0, todos.length)
+					}
+				},
+				actions: {
+					loadTodos (store) {
+						return Vue.http.get('/todos/todos/')
+							.then((response) => store.commit('LOAD_TODOS', response))
+							.catch((error) => console.error(error))
+					},
+					addTodo (store, todo) {
+						return Vue.http.post('/todos/todos/', todo)
+							.then((response) => store.commit('ADD_TODO', response))
+							.catch((error) => console.error(error))
+					},
+					editTodo (store, todo) {
+						if (todo && todo.id)
+						{
+							console.log(todo.id);
+							return Vue.http.patch('/todos/todos/'+todo.id+'/', todo)
+								.then((response) => store.commit('EDIT_TODO', response))
+								.catch((error) => console.error(error))
+						}
+					},
+					removeTodo (store, todo) {
+						return Vue.http.delete('/todos/todos/'+todo.id)
+							.then((response) => store.commit('REMOVE_TODO', todo))
+							.catch((error) => console.error(error))
+					},
+					removeAll (store) {
+						return Vue.http.delete('/todos/todos/remove_all/')
+							.then((response) => store.commit('REMOVE_ALL'))
+							.catch((error) => console.error(error))
+					}
+				}
+			})
+						
+			
+			
+			
+			/*
+			var STORAGE_KEY = 'todos-vuejs-2.0'
+			var todoStorage = {
+				fetch: function () {
+					var todos = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
+					todos.forEach(function (todo, index) {
+						todo.id = index
+					})
+					todoStorage.uid = todos.length
+					return todos
+				},
+				save: function (todos) {
+					localStorage.setItem(STORAGE_KEY, JSON.stringify(todos))
+				}
+			}
+			*/
+			
+			// visibility filters
+			var filters = {
+				all: function (todos) {
+					return todos
+				},
+				active: function (todos) {
+					return todos.filter(function (todo) {
+						return !todo.completed
+					})
+				},
+				completed: function (todos) {
+					return todos.filter(function (todo) {
+						return todo.completed
+					})
+				}
+			}
+			
+			// app Vue instance
+			var app = new Vue({
+				// app initial state
+				data: {
+					// todos: todoStorage.fetch(),
+					newTodo: '',
+					editedTodo: null,
+					visibility: 'all',
+					newTodoTime: '',
+				},
+				
+				store: store,
+			
+				// watch todos change for localStorage persistence
+				/*
+				watch: {
+					todos: {
+						handler: function (todos) {
+							todoStorage.save(todos)
+						},
+						deep: true
+					}
+				},
+				*/
+			
+				// computed properties
+				// http://vuejs.org/guide/computed.html
+				computed: {
+					todos: function () {
+						return this.$store.state.todos
+					},
+					filteredTodos: function () {
+						return filters[this.visibility](this.todos)
+					},
+					remaining: function () {
+						return filters.active(this.todos).length
+					},
+					allDone: {
+						get: function () {
+							return this.remaining === 0
+						},
+						set: function (value) {
+							this.todos.forEach(function (todo) {
+								todo.completed = value
+							})
+						}
+					}
+				},
+			
+				filters: {
+					pluralize: function (n) {
+						return n === 1 ? 'item' : 'items'
+					}
+				},
+			
+				// methods that implement data logic.
+				// note there's no DOM manipulation here at all.
+				methods: {
+					addTodo: function () {
+						var value = this.newTodo && this.newTodo.trim()
+						if (!value) {
+							return
+						}
+						// What the fuck?! Evidently, the main data-model of Todo is stored
+						// just as an object being pushed in an array and nowhere else
+						var todo = {
+							//id: todoStorage.uid++,
+							title: this.newTodoTime + ' ' + value,
+							completed: false,
+							time: ''
+						}
+						
+						this.extractTimeFromTitle(todo)
+						
+						this.$store.dispatch('addTodo', todo)
+	  
+						this.newTodo = '';
+						this.newTodoTime = '';
+					},
+			
+					removeTodo: function (todo) {
+						//this.todos.splice(this.todos.indexOf(todo), 1)
+						this.$store.dispatch('removeTodo', todo)
+					},
+			
+					editTodo: function (todo) {
+						this.beforeEditCache = todo.title
+						this.editedTodo = todo
+					},
+			
+					doneEdit: function (todo) {
+						if (!this.editedTodo) {
+							return
+						}
+						this.editedTodo = null
+						todo.title = todo.title.trim()
+						if (!todo.title) {
+							this.removeTodo(todo)
+							return
+						}
+						this.extractTimeFromTitle(todo);
+						
+						app.$store.dispatch('editTodo', todo)
+					},
+			
+					cancelEdit: function (todo) {
+						this.editedTodo = null
+						todo.title = this.beforeEditCache
+					},
+			
+					removeCompleted: function () {
+						this.todos = filters.active(this.todos)
+					},
+					
+					extractTimeFromTitle: function (todo) {
+						if (todo) {
+							if (todo && todo.title) {
+								var match = todo.title.match(/\d{1,2}:\d{2}/);
+							} 
+							todo.time = (match && match[0]) || '';
+							if (!todo.time)
+							{
+								delete todo.time;
+							}
+							console.log(todo.time)
+						}
+					},
+				},
+			
+				// a custom directive to wait for the DOM to be updated
+				// before focusing on the input field.
+				// http://vuejs.org/guide/custom-directive.html
+				directives: {
+					'todo-focus': function (el, binding) {
+						if (binding.value) {
+							el.focus()
+						}
+					}
+				}
+			})
+			
+			// handle routing
+			function onHashChange () {
+				var visibility = window.location.hash.replace(/#\/?/, '')
+				if (filters[visibility]) {
+					app.visibility = visibility
+				} else {
+					window.location.hash = ''
+					app.visibility = 'all'
+				}
+			}
+			
+			window.addEventListener('hashchange', onHashChange)
+			onHashChange()
+			
+			// mount
+			app.$mount('.todoapp')
+			
+			app.$store.dispatch('loadTodos')
+		</script>
+		
+		
+		
+	</body>
+</html>
