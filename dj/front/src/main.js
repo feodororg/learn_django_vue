@@ -9,6 +9,9 @@ import store from './store';
 Vue.use(Vuex);
 
 Vue.config.productionTip = false;
+Vue.config.devtools = true;
+Vue.config.debug = true;
+Vue.config.silent = false;
 
 /* eslint-disable no-new */
 new Vue({
