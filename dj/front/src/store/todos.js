@@ -12,13 +12,16 @@ export default {
     ],
   },
   mutations: {
+/*
     LOAD_TODOS(state, response) {
       // Vue.set(state.todos, hash(q), results);
       state.todos = response.body.results;
     },
+*/
     ADD_TODO(state, response) {
       state.todos.push(response.body);
     },
+/*
     EDIT_TODO() {
       // console.log("EDIT_TODO mutation");
     },
@@ -29,16 +32,20 @@ export default {
       const todos = state.todos;
       todos.splice(0, todos.length);
     },
+*/
   },
   actions: {
+/*
     loadTodos(store) {
       return Vue.http.get('/todos/todos/')
         .then(response => store.commit('LOAD_TODOS', response));
     },
+*/
     addTodo(store, todo) {
-      return Vue.http.post('/todos/todos/', todo)
+      return Vue.http.post('http://127.0.0.1:8000/todos/todos/', todo)
         .then(response => store.commit('ADD_TODO', response));
     },
+/*
     editTodo(store, todo) {
       const path = `/todos/todos/${todo.id}/`;
       return Vue.http.patch(path, todo)
@@ -53,6 +60,7 @@ export default {
       return Vue.http.delete('/todos/todos/remove_all/')
         .then(response => store.commit('REMOVE_ALL'));
     },
+*/
   },
 
 };

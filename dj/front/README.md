@@ -1,6 +1,6 @@
 # front
 
-> Learning Vue project, todos
+> vue study
 
 ## Build Setup
 
