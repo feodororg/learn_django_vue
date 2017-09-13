@@ -7,11 +7,18 @@
         placeholder="What needs to be done?"
         v-model="newTodo"
         @keyup.enter="addTodo">
+      
+    <div is="TodoBasicList">
+    
     </div>
+  </div>
+    
+    
 </template>
 
 <script>
 import store from '../store';
+import TodoBasicList from './TodoBasicList';
 
 export default {
   name: 'TodoBasicAdd',
@@ -21,28 +28,25 @@ export default {
       msg: 'This is Todo Basic Add',
     };
   },
+  computed: {
+    todos() {
+      return store.state.todos.todos;
+    },
+  },
+  components: {
+    TodoBasicList,
+  },
+  created: function created() {
+    store.dispatch('todos/loadTodos', { title: 'test too' });
+  },
   methods: {
     addTodo: function addTodo() {
       console.log('add todo');
-      store.dispatch('todos/addTodo', { title: 'test too' });
-      console.log(store);
-/*
-      var value = this.newTodo && this.newTodo.trim()
-      if (!value) {
-          return
-      }
-      // What the fuck?! Evidently, the main data-model of Todo is stored
-      // just as an object being pushed in an array and nowhere else
-      this.todos.push({
-          id: todoStorage.uid++,
-          title: this.newTodoTime + ' ' + value,
-          completed: false,
-          time: ''
-      })
-      this.extractTimeFromTitle(this.todos[this.todos.length - 1]);
-      this.newTodo = '';
-      this.newTodoTime = '';
-      */
+      store.dispatch('todos/addTodo', {
+        title: this.newTodo.trim(),
+        completed: false,
+        // time: '',
+      });
     },
   },
 };
